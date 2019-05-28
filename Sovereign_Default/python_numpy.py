@@ -64,5 +64,3 @@ def main(nB=351, repeats=500):
 
 
 print(1000 * main(nB=1151, repeats=100))
-
-# _,V_ = main(nB=151, repeats=100)
