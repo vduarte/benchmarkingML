@@ -7,7 +7,7 @@ m = 10
 K = tf.Variable(40.)
 r = tf.Variable(0.06)
 T = 1
-order = 25
+order = 200
 Δt = T / m
 
 
