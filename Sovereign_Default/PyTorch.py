@@ -5,7 +5,7 @@ logy_grid = torch.tensor(np.loadtxt('logy_grid.txt', dtype=np.float32))
 Py = torch.tensor(np.loadtxt('P.txt', dtype=np.float32))
 
 
-def main(nB=1151, repeats=500):
+def main(nB=151, repeats=500):
     β = .953
     γ = 2.
     r = 0.017

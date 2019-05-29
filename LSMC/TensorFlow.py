@@ -1,4 +1,4 @@
-import numpy as np, tensorflow as tf, time, sys
+import numpy as np, tensorflow as tf, time
 
 Spot = tf.Variable(36.)
 σ = tf.Variable(0.2)
@@ -7,7 +7,7 @@ m = 10
 K = tf.Variable(40.)
 r = tf.Variable(0.06)
 T = 1
-order = 50
+order = 25
 Δt = T / m
 
 
@@ -31,7 +31,7 @@ def first_one(x):
     nt = x.shape.as_list()[0]
     batch_size = x.shape.as_list()[1]
     x_not = 1 - x
-    sum_x = tf.minimum(tf.math.cumprod(x_not, axis=0), 1.)
+    sum_x = tf.minimum(tf.cumprod(x_not, axis=0), 1.)
     ones = tf.ones([1, batch_size])
     lag = sum_x[:(nt - 1), :]
     lag = tf.concat([ones, lag], axis=0)
@@ -47,12 +47,11 @@ def scale(x):
 
 
 def advance(S):
-    dB = np.sqrt(Δt) * tf.random.normal(shape=[n])
+    dB = np.sqrt(Δt) * tf.random_normal(shape=[n])
     out = S + r * S * Δt + σ * S * dB
     return out
 
 
-@tf.function
 def main():
     S = [Spot * tf.ones([n])]
 
@@ -85,9 +84,17 @@ def main():
     m_range = np.array(range(m)).reshape(-1, 1)
     dFPOF = FPOF * tf.exp(-r * m_range * Δt)
     price = tf.reduce_sum(dFPOF) / n
-    # return price
     greeks = tf.gradients(price, [Spot, σ, K, r])
     return price, greeks
 
 
-%timeit price, greeks = main()
+price, greeks = main()
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+sess.run([price] + greeks)
+t0 = time.time()
+for idx in range(100):
+    sess.run([price] + greeks)
+t1 = time.time()
+print((t1 - t0) / 100 * 1000)
