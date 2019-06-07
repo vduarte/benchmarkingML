@@ -31,7 +31,6 @@ def main(nB=351, repeats=500):
 
     zero_ind = nB // 2
 
-    # Utility function
     def u(c):
         return c**(1 - γ) / (1 - γ)
 
@@ -48,22 +47,17 @@ def main(nB=351, repeats=500):
     m = u(c) + β * EV
     Vc_target = tf.reduce_max(m, axis=2)
 
-    # Update prices
     default_states = tf.cast(Vd > Vc, tf.float32)
     default_prob = Py @ default_states
     Q_target = (1 - default_prob) / (1 + r)
 
-    # Value function
-    V_upd = tf.maximum(Vc, Vd)
+    V_target = tf.maximum(Vc, Vd)
 
-    update_V = V.assign(V_upd)
+    update_V = V.assign(V_target)
     update_Vc = Vc.assign(Vc_target)
     update_Vd = Vd.assign(Vd_target)
-
-    with tf.control_dependencies([update_Vc]):
-        with tf.control_dependencies([update_Vd]):
-            with tf.control_dependencies([update_V]):
-                update = Q.assign(Q_target)
+    update_Q = Q.assign(Q_target)
+    update = tf.group(update_V, update_Vc, update_Vd, update_Q)
 
     # Execution -----------------------------------
     config = tf.ConfigProto()
@@ -81,4 +75,4 @@ def main(nB=351, repeats=500):
     return out
 
 
-print(1000 * main(nB=1551, repeats=50))
+print(1000 * main(nB=151, repeats=500))

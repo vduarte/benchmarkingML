@@ -8,7 +8,7 @@ r = 0.06
 n = 100000
 m = 10
 T = 1
-order = int(sys.argv[1])
+order = 5
 Δt = T / m
 
 
@@ -48,18 +48,19 @@ def scale(x):
         return a * x + b
 
 
-def advance(S):
+def advance(S, r, σ):
     dB = np.sqrt(Δt) * np.random.normal(size=[n])
     out = S + r * S * Δt + σ * S * dB
     return out
 
 
-def main():
+def compute_price(Spot, σ, K, r):
+    np.random.seed(0)
     S = np.zeros((m + 1, n))
     S[0, :] = Spot
 
     for t in range(m):
-        S[t + 1, :] = advance(S[t, :])
+        S[t + 1, :] = advance(S[t, :], r, σ)
 
     discount = np.exp(-r * Δt)
     CFL = np.maximum(0., K - S)
@@ -87,7 +88,12 @@ def main():
     return PRICE
 
 
+ε = 1e-2
 t0 = time.time()
-main()
+P = compute_price(Spot, σ, K, r)
+dP_dS = (compute_price(Spot + ε, σ, K, r) - P) / ε
+dP_dσ = (compute_price(Spot, σ + ε, K, r) - P) / ε
+dP_dK = (compute_price(Spot, σ, K + ε, r) - P) / ε
+dP_dr = (compute_price(Spot, σ, K, r + ε) - P) / ε
 t1 = time.time()
-print((t1 - t0) * 4 * 1000)  # Multiply by four bc we need the greeks
+print((t1 - t0) * 1000)  # Multiply by four bc we need the greeks
