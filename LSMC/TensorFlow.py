@@ -1,4 +1,6 @@
-import numpy as np, tensorflow as tf, time
+import numpy as np
+import tensorflow as tf
+import time
 
 Spot = tf.Variable(36.)
 σ = tf.Variable(0.2)
@@ -7,7 +9,7 @@ m = 10
 K = tf.Variable(40.)
 r = tf.Variable(0.06)
 T = 1
-order = 200
+order = 25
 Δt = T / m
 
 
@@ -52,7 +54,7 @@ def advance(S):
     return out
 
 
-def main():
+def compute_price():
     S = [Spot * tf.ones([n])]
 
     for t in range(m):
@@ -88,7 +90,7 @@ def main():
     return price, greeks
 
 
-price, greeks = main()
+price, greeks = compute_price()
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 

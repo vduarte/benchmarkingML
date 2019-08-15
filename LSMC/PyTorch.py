@@ -1,4 +1,6 @@
-import numpy as np, torch, time, sys
+import numpy as np
+import torch
+import time
 torch.set_default_tensor_type("torch.cuda.FloatTensor")
 
 Spot = torch.tensor(36., requires_grad=True)
@@ -8,7 +10,7 @@ r = torch.tensor(0.06, requires_grad=True)
 n = 100000
 m = 10
 T = 1
-order = int(sys.argv[1])
+order = 25
 Δt = T / m
 
 
@@ -24,7 +26,7 @@ def chebyshev_basis(x, k):
 def ridge_regression(X, Y, λ=100):
     I = torch.eye(order)
     YY = Y.reshape(-1, 1)
-    β = torch.gesv(X.transpose(1, 0) @ YY, X.transpose(1, 0) @ X + λ * I)[0]
+    β = torch.solve(X.transpose(1, 0) @ YY, X.transpose(1, 0) @ X + λ * I)[0]
     return torch.squeeze(X @ β)
 
 
@@ -60,7 +62,7 @@ def where(cond, x_1, x_2):
     return (cond * x_1) + ((1 - cond) * x_2)
 
 
-def main():
+def compute_price():
     S = [Spot * torch.ones([n])]
 
     for t in range(m):
@@ -97,10 +99,10 @@ def main():
     return [price] + greeks
 
 
-result = main()
+result = compute_price()
 
 t0 = time.time()
 for idx in range(100):
-    main()
+    compute_price()
 t1 = time.time()
 print((t1 - t0) / 100 * 1000)

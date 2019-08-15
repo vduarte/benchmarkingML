@@ -1,4 +1,6 @@
-import numpy as np, tensorflow as tf, time
+import numpy as np
+import tensorflow as tf
+import time
 
 Spot = tf.Variable(36.)
 σ = tf.Variable(0.2)
@@ -52,7 +54,7 @@ def advance(S):
     return out
 
 
-def main():
+def compute_price():
     S = [Spot * tf.ones([n])]
 
     for t in range(m):
@@ -88,7 +90,7 @@ def main():
     return price
 
 
-results = tf.reduce_mean(tf.contrib.tpu.batch_parallel(main, num_shards=8)[0])
+results = tf.reduce_mean(tf.contrib.tpu.batch_parallel(compute_price, num_shards=8)[0])
 
 # ==============================================================================
 # %% Run

@@ -10,6 +10,21 @@ order <- 25
 zeros <- matrix(0, n, 1)
 
 
+chebyshev_basis <- function(x, k) {
+    B = matrix(1, n, k)
+    B[,2] = x
+    for (count in seq(3, k)) {
+        B[, count] = 2 * x * B[, count - 1] - B[, count - 2]
+    }
+    return(B)
+} 
+
+ridge_regression <- function(X, Y, lam){
+    I = diag(nrow=order, ncol=order)
+    beta = solve(t(X) %*% X + lam * I, t(X) %*%  Y)
+    return(X %*% beta)
+}
+
 first_one_np <- function(x) {
     original <- x
     x <- x > 0
@@ -24,22 +39,6 @@ first_one_np <- function(x) {
 }
 
 
-chebyshev_basis <- function(x, k) {
-    B = matrix(1, n, k)
-    B[,2] = x
-    for (count in seq(3, k)) {
-        B[, count] = 2 * x * B[, count - 1] - B[, count - 2]
-    }
-    return(B)
-}    
-
-
-ridge_regression <- function(X, Y, lam){
-    I = diag(nrow=order, ncol=order)
-    beta = solve(t(X) %*% X + lam * I, t(X) %*%  Y)
-    return(X %*% beta)
-}
-
 
 scale <- function(x){
         xmin = min(x)
@@ -49,20 +48,20 @@ scale <- function(x){
         return(a * x + b)
 }
 
-advance <- function(S){
-    set.seed(42)
+advance <- function(S, r, σ, Δt, n){
     dB <- sqrt(Δt) * rnorm(n, 0, 1)
     out <- S + r * S * Δt + σ * S * dB
     return(out)
 }
 
-main <- function(){
+compute_price <- function(Spot, σ, K, r){
+    set.seed(0)
     S <- matrix(0, n, m + 1)
     CFL <- matrix(0, n, m + 1)
     S[, 1] <- Spot
 
     for (count in seq(2, m + 1)) {
-        S[, count] = advance(S[, count - 1])
+        S[, count] = advance(S[, count - 1], r, σ, Δt, n)
     }    
     for (count in seq(1, m + 1)) {
         CFL[, count] =  pmax(0., K - S[, count])
@@ -99,8 +98,12 @@ main <- function(){
 }
 
 repeats = 10
+ε = 1e-2
 t0 <- Sys.time()
-for (t in seq(repeats))
-    main()
+P = compute_price(Spot, σ, K, r)
+dP_dS <- (compute_price(Spot + ε, σ, K, r) - P) / ε
+dP_dσ <- (compute_price(Spot, σ + ε, K, r) - P) / ε
+dP_dK <- (compute_price(Spot, σ, K + ε, r) - P) / ε
+dP_dr <- (compute_price(Spot, σ, K, r + ε) - P) / ε
 t1 <- Sys.time()
-print((t1 - t0) / repeats * 4 * 1000)  # Multiply by four bc we need 4 greeks
+print((t1 - t0) * 1000)  # Multiply by four bc we need 4 greeks
