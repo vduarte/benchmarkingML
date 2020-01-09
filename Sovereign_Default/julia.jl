@@ -1,8 +1,8 @@
 using DelimitedFiles, Statistics
 
 # Load grid for log(y) and transition matrix
-logy_grid = readdlm("logy_grid.txt")[:]
-Py = readdlm("P.txt")
+const logy_grid = readdlm("logy_grid.txt")[:]
+const Py = readdlm("P.txt")
 
 
 function main(nB=351, repeats=500)
@@ -29,10 +29,7 @@ function main(nB=351, repeats=500)
 
     zero_ind = Int(ceil(nB / 2))
 
-    function u(c, γ)
-        return c.^(1 - γ) / (1 - γ)
-    end
-
+    u(c, γ) = c^(1 - γ) / (1 - γ)
 
     t0 = time()
     function iterate(V, Vc, Vd, Q)
@@ -40,15 +37,27 @@ function main(nB=351, repeats=500)
         EVd = Py * Vd
         EVc = Py * Vc
 
-        Vd_target = u(def_y, γ) + β * (θ * EVc[:, zero_ind] + (1 - θ) * EVd[:])
+        Vd_target = u.(def_y, γ) + β * (θ * EVc[:, zero_ind] + (1 - θ) * EVd[:])
         Vd_target = reshape(Vd_target, (ny, 1))
 
         Qnext = reshape(Q, (ny, 1, nB))
 
-        c = @. y .- Qnext .* Bnext .+ B
-        c[c .<= 0] = 1e-14 .+ 0 * c[c .<= 0]
-        EV = reshape(EV, (ny, 1, nB))
-        m =  @. u(c, γ) .+ β * EV
+        m = Array{Float64,3}(undef, ny, nB, nB)
+        @inbounds for k = 1:nB
+            Bk = Bgrid[k]
+            for j = 1:nB
+                Bj = Bgrid[j]
+                @simd for i = 1:ny
+                    c = ygrid[i] - Q[i,k] * Bk + Bj
+                    c = max(c, 1e-14)
+                    m[i, j, k] = u(c, γ) + β * EV[i,j]
+                end
+            end
+        end
+        # c = @. y - Qnext * Bnext + B
+        # map!(x->max(x, 1e-14), c, c)
+        # EV = reshape(EV, (ny, 1, nB))
+        # m =  @. u(c, γ) + β * EV
         Vc_target = reshape(maximum(m, dims=3), (ny, nB))
 
         Vd_compat = Vd * ones(1, nB)
